@@ -3,7 +3,7 @@ name: Threads Followers Monitor
 on:
   schedule:
     # 這裡的設定代表每 3 小時自動執行一次 (國際標準時間 UTC)
-    - cron: '0 */3 * * *'
+    - cron: '0 */1 * * *'
   workflow_dispatch: # 這一行能讓我們隨時在網頁上手動點擊按鈕來測試執行
 
 jobs:
