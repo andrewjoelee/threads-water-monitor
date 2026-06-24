@@ -43,7 +43,7 @@
         .detail-img-container { width: 100%; background: #ffffff; border: 1px solid #eaeaea; border-radius: 6px; overflow: hidden; padding: 10px; text-align: center; }
         .detail-img { max-width: 100%; max-height: 550px; object-fit: contain; border-radius: 4px; }
         .detail-address-block { margin-top: 15px; font-size: 1rem; color: #333; background: #fff; border: 1px solid #eaeaea; padding: 12px 15px; border-radius: 6px; }
-        .badge { display: inline-block; padding: 2px 8px; background: #e0f0ff; color: #0066cc; font-size: 0.8rem; font-weight: bold; border-radius: 4px; margin-left: 5px; }
+        .badge { display: inline-block; padding: 2px 8px; background: #e0f0ff; color: #0066cc; font-size: 0.8rem; font-weight: bold; border-radius: 4px; margin-left: 0; }
         
         /* 舊版精華樣式優化 */
         .club-header { text-align: center; padding: 30px 0; border-bottom: 2px solid #1a1a1a; margin-bottom: 30px; }
@@ -174,7 +174,7 @@
                     </div>
                     <div>
                         <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">稱號</span>
-                        <strong id="det-title">-</strong> <span id="club-badge"></span>
+                        <div id="det-title" style="font-weight: bold; color: #1a1a1a; font-size: 1rem; line-height: 1.6;">-</div>
                     </div>
                     <div>
                         <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">品牌</span>
@@ -338,7 +338,7 @@
                     <div style="font-weight:600;">${item.followers} 粉絲</div>
                 </div>
             `).join('');
-            document.getElementById('personal-ranking-list').innerHTML = personalListHtml || '<div style="color:#aaa;">目前尚無資料</div>';
+            document.getElementById('personal-ranking-list').innerHTML = personalListHtml || '<div style="color:#aaa;">目​​前尚無資料</div>';
 
             const cityCounts = {};
             ALL_CITIES.forEach(c => cityCounts[c] = 0);
@@ -401,7 +401,7 @@
                 return rA - rB;
             });
 
-            // 🔄 修改1：這裡已將原本右側的 <span style="font-size: 0.85rem; color: #888;">${o.school}</span> 整行刪除！
+            // 🔄 修改1：這裡已將原本右側的學校名稱整行刪除！
             const officersHtml = officers.map(o => `
                 <div style="padding: 12px 15px; background: #fafafa; border: 1px solid #eaeaea; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -417,12 +417,12 @@
             const members = rawData.filter(item => item.isClub === "慢" || item.isClub === "是");
             members.sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
 
+            // 🔄 修改5：將名字後面的學校括號完全移除
             const membersHtml = members.map((m, idx) => `
                 <div class="list-item">
                     <div>
                         <span class="rank-badge">${idx+1}</span>
                         <a href="#/user/${encodeURIComponent(m.id)}">${m.name || m.id}</a>
-                        <span style="font-size:0.85rem; color:#888; margin-left:8px;">(${m.school})</span>
                     </div>
                     <div style="font-size:0.9rem; color:#555;">${m.followers} 粉絲</div>
                 </div>
@@ -486,37 +486,43 @@
             linkEl.innerText = `@${item.id}`;
             linkEl.href = `https://www.threads.net/@${item.id}`;
 
-            // 🔄 修改3 & 修改4：依照全台粉絲量排序，動態在稱號前加上「🥇 粉絲數冠軍 」等精確字樣
+            // 🔄 修改3, 4, 6：稱號與職位依指定順序重新排序（職位放第一、名次放第二、自訂放第三）並強制換行
+            
+            // 1. 處理社團職位 (第一順位)
+            let roleText = "";
+            if (item.clubRole) {
+                roleText = `<span class="badge">👑 社團${item.clubRole}</span>`;
+            } else if (item.isClub === "是" || item.isClub === "慢") {
+                roleText = `<span class="badge">🥤 社團成員</span>`;
+            }
+
+            // 2. 處理粉絲數名次 (第二順位)
             const sortedData = [...rawData].sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
             const rankIndex = sortedData.findIndex(u => u.id === userId);
             
-            let prefix = "";
+            let rankText = "";
             if (rankIndex === 0) {
-                prefix = "🥇 粉絲數冠軍 ";
+                rankText = "🥇 粉絲數冠軍";
             } else if (rankIndex === 1) {
-                prefix = "🥈 粉絲數亞軍 ";
+                rankText = "🥈 粉絲數亞軍";
             } else if (rankIndex === 2) {
-                prefix = "🥉 粉絲數季軍 ";
+                rankText = "🥉 粉絲數季軍";
             }
 
-            // 結合前綴文字與原本的稱號
-            const baseTitle = item.title || "無";
-            document.getElementById('det-title').innerText = prefix ? prefix + baseTitle : baseTitle;
+            // 3. 處理自訂稱號 (第三順位)
+            const customTitle = item.title || "";
+
+            // 🚀 將存在的項目依序放入陣列，並使用 <br> 換行連結
+            const titleParts = [];
+            if (roleText) titleParts.push(roleText);
+            if (rankText) titleParts.push(rankText);
+            if (customTitle && customTitle !== "無") titleParts.push(customTitle);
+
+            // 渲染到稱號區塊
+            document.getElementById('det-title').innerHTML = titleParts.length > 0 ? titleParts.join('<br>') : "無";
             
             document.getElementById('det-followers').innerText = item.followers || "0";
             document.getElementById('det-time').innerText = item.updateTime || "-";
-
-            const badgeEl = document.getElementById('club-badge');
-            if (item.clubRole) {
-                badgeEl.innerText = `👑 社團${item.clubRole}`;
-                badgeEl.className = "badge";
-            } else if (item.isClub === "是" || item.isClub === "慢") {
-                badgeEl.innerText = "🥤 社團成員";
-                badgeEl.className = "badge";
-            } else {
-                badgeEl.innerText = "";
-                badgeEl.className = "";
-            }
         }
 
         window.addEventListener('hashchange', handleRouting);
