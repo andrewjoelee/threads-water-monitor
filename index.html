@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>全台飲水機觀測站</title>
-    <!-- 📊 線上載入輕量美觀的 Chart.js 繪圖庫 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* 精緻的極簡風格全面回歸 */
@@ -73,28 +72,23 @@
     <div class="container">
         <div id="loading-view" class="loading">正在向雲端讀取飲水機即時數據...</div>
 
-        <!-- 🏠 首頁視圖 -->
         <div id="home-view" class="view hidden">
-            <!-- 1. 全臺飲水機總數 -->
             <div class="card" style="text-align: center; padding: 40px 20px;">
                 <h1 style="font-size: 3rem; font-weight: bold; color: #1a1a1a;" id="total-count">0 台</h1>
                 <p style="color: #666; margin-top: 5px; font-size: 1.1rem;">全臺飲水機總數</p>
             </div>
 
-            <!-- 2. 個人粉絲排行榜 (TOP 10) -->
             <div class="card">
                 <h2>個人粉絲排行榜 (TOP 10)</h2>
                 <div id="personal-ranking-list"></div>
             </div>
 
-            <!-- 3. 各縣市總數統計 -->
             <div class="card">
                 <h2>各縣市總數統計</h2>
                 <div id="city-ranking-list"></div>
                 <button id="toggle-city-btn" class="toggle-btn">展開查看全臺名次 ↓</button>
             </div>
 
-            <!-- 4. 飲水機品牌市佔率 -->
             <div class="card">
                 <h2>飲水機品牌市佔率</h2>
                 <div class="chart-container">
@@ -103,7 +97,6 @@
             </div>
         </div>
 
-        <!-- 📍 縣市列表視圖 -->
         <div id="city-view" class="view hidden">
             <h2 id="city-view-title" style="font-size: 1.6rem; border: none; margin-bottom: 20px;">縣市</h2>
             <div class="card">
@@ -112,20 +105,17 @@
             <a href="#/">&larr; 返回首頁</a>
         </div>
 
-        <!-- 🥤 社團總部視圖 -->
         <div id="club-view" class="view hidden">
             <div class="club-header">
                 <h1>飲水機研究社第0屆</h1>
             </div>
             
             <div class="detail-layout">
-                <!-- 左側：幹部名單與精神宗旨 -->
                 <div class="detail-main">
                     <div class="card">
                         <h2>幹部</h2>
                         <div id="club-officers-container" style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
-                            <!-- 這裡會依序由 JavaScript 動態塞入：社長、副社長、美宣 -->
-                        </div>
+                            </div>
                     </div>
 
                     <div class="card">
@@ -142,7 +132,6 @@
                     </div>
                 </div>
 
-                <!-- 右側：官方資料與互動挑戰 -->
                 <div class="detail-side">
                     <div class="card">
                         <h2>官方資料</h2>
@@ -162,7 +151,6 @@
             </div>
         </div>
 
-        <!-- 🔍 詳細資料視圖 -->
         <div id="user-view" class="view hidden">
             <div class="detail-layout">
                 <div class="detail-main">
@@ -181,7 +169,7 @@
                         <strong><a id="det-school-link" target="_blank" style="color: #1a1a1a;">-</a></strong>
                     </div>
                     <div>
-                        <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">ID</span>
+                        <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">Threads</span>
                         <strong><a id="det-id-link" target="_blank" style="color: #0066cc;">-</a></strong>
                     </div>
                     <div>
@@ -404,7 +392,6 @@
         function renderClubPage() {
             document.getElementById('club-view').classList.remove('hidden');
 
-            // 👑 排序幹部名單（依據：社長 -> 副社長 -> 其他幹部）
             const officers = rawData.filter(item => item.clubRole && item.clubRole.trim() !== "");
             
             const roleOrder = { "社長": 1, "副社長": 2, "美宣": 3 };
@@ -414,6 +401,7 @@
                 return rA - rB;
             });
 
+            // 🔄 修改1：這裡已將原本右側的 <span style="font-size: 0.85rem; color: #888;">${o.school}</span> 整行刪除！
             const officersHtml = officers.map(o => `
                 <div style="padding: 12px 15px; background: #fafafa; border: 1px solid #eaeaea; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
                     <div>
@@ -422,12 +410,10 @@
                         </span>
                         <a href="#/user/${encodeURIComponent(o.id)}" style="font-weight: 600;">${o.name || o.id}</a>
                     </div>
-                    <span style="font-size: 0.85rem; color: #888;">${o.school}</span>
                 </div>
             `).join('');
             document.getElementById('club-officers-container').innerHTML = officersHtml || '<div style="color:#aaa;">目前尚未設定幹部職位</div>';
 
-            // 👥 成員名單
             const members = rawData.filter(item => item.isClub === "慢" || item.isClub === "是");
             members.sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
 
@@ -445,27 +431,21 @@
         }
 
         function renderUserDetailPage(userId) {
-	  document.getElementById('user-view').classList.remove('hidden');
+            document.getElementById('user-view').classList.remove('hidden');
 
-	  // 1. 先用小寫的 u.id 找出對應的飲水機資料（先宣告！）
-	  const item = rawData.find(u => u.id === userId);
-  
-	  // 2. 檢查有沒有找到這台飲水機
-	  if (!item) {
-	    document.getElementById('det-name').innerText = "找不到該飲水機資料";
-	    return;
-	  }
+            const item = rawData.find(u => u.id === userId);
+          
+            if (!item) {
+                document.getElementById('det-name').innerText = "找不到該飲水機資料";
+                return;
+            }
 
-	  // 3. 找到之後，才開始把資料塞進網頁（這時才能安全地使用 item！）
-	  document.getElementById('det-name').innerText = item.name || "未命名飲水機";
-  
-	  // 這裡確保是使用你在 Apps Script 裡面傳出來的小寫 imageUrl 欄位！
-	  document.getElementById('det-img').src = item.imageUrl || "https://via.placeholder.com/400x400?text=No+Image";
+            document.getElementById('det-name').innerText = item.name || "未命名飲水機";
+            document.getElementById('det-img').src = item.imageUrl || "https://via.placeholder.com/400x400?text=No+Image";
 
-	  // 接下來是原本處理地址、連結的其他程式碼...
-	  const locLink = document.getElementById('det-location-link');
-	  locLink.innerText = item.location || "未提供詳細地址";
-	  // ...後面保持原樣
+            const locLink = document.getElementById('det-location-link');
+            locLink.innerText = item.location || "未提供詳細地址";
+
             if (item.mapUrl) {
                 locLink.href = item.mapUrl;
                 locLink.style.pointerEvents = "auto";
@@ -506,7 +486,23 @@
             linkEl.innerText = `@${item.id}`;
             linkEl.href = `https://www.threads.net/@${item.id}`;
 
-            document.getElementById('det-title').innerText = item.title || "無";
+            // 🔄 修改3 & 修改4：依照全台粉絲量排序，動態在稱號前加上「🥇 粉絲數冠軍 」等精確字樣
+            const sortedData = [...rawData].sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
+            const rankIndex = sortedData.findIndex(u => u.id === userId);
+            
+            let prefix = "";
+            if (rankIndex === 0) {
+                prefix = "🥇 粉絲數冠軍 ";
+            } else if (rankIndex === 1) {
+                prefix = "🥈 粉絲數亞軍 ";
+            } else if (rankIndex === 2) {
+                prefix = "🥉 粉絲數季軍 ";
+            }
+
+            // 結合前綴文字與原本的稱號
+            const baseTitle = item.title || "無";
+            document.getElementById('det-title').innerText = prefix ? prefix + baseTitle : baseTitle;
+            
             document.getElementById('det-followers').innerText = item.followers || "0";
             document.getElementById('det-time').innerText = item.updateTime || "-";
 
