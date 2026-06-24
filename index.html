@@ -1,464 +1,522 @@
 <!DOCTYPE html>
 <html lang="zh-TW">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>🥤 飲水機 | Water dispenser</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-      background-color: #ffffff;
-      color: #333333;
-      line-height: 1.5;
-    }
-    /* 頂部導覽 */
-    header {
-      border-bottom: 1px solid #eee;
-      position: fixed;
-      top: 0; width: 100%; background: #fff; z-index: 100;
-    }
-    .nav-container {
-      max-width: 1000px; margin: 0 auto; padding: 20px;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .logo-area { text-decoration: none; color: #000; cursor: pointer; }
-    .logo-area h1 { font-size: 24px; font-weight: bold; }
-    .logo-area p { font-size: 12px; color: #666; font-style: italic; }
-    .nav-links { display: flex; gap: 25px; list-style: none; }
-    .nav-links span { cursor: pointer; color: #555; font-size: 15px; transition: color 0.2s; }
-    .nav-links span:hover, .nav-links span.active { color: #0056b3; font-weight: bold; }
-
-    /* 頁面主體容器 */
-    .container { max-width: 1000px; margin: 120px auto 100px auto; padding: 0 20px; }
-    .page { display: none; }
-    .page.active { display: block; }
-
-    /* === 1. 極簡首頁與大圖樣式 === */
-    .hero-section { display: flex; align-items: center; justify-content: space-between; min-height: 220px; margin-bottom: 40px; }
-    .hero-left { flex: 1; }
-    .counter-box { font-size: 64px; font-weight: 900; color: #1a365d; margin-bottom: 5px; }
-    .counter-box span { font-size: 24px; color: #4a5568; font-weight: normal; margin-left: 10px; }
-
-    /* === 榜單與區塊極簡樣式 === */
-    .section-title { font-size: 22px; font-weight: bold; color: #1a365d; margin: 40px 0 20px 0; padding-left: 10px; border-left: 4px solid #0056b3; }
-    
-    .list-container { border: 1px solid #eee; border-radius: 12px; overflow: hidden; background: #fff; margin-bottom: 20px; }
-    .list-item { padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; font-size: 16px; }
-    .list-item:last-child { border-bottom: none; }
-    .item-name-link { color: #0056b3; cursor: pointer; text-decoration: none; font-weight: 500; }
-    .item-name-link:hover { text-decoration: underline; }
-    .item-value { color: #4a5568; font-size: 14px; }
-    .rank-num { font-weight: bold; color: #718096; width: 30px; display: inline-block; }
-
-    /* 下拉查看全部按鈕 */
-    .toggle-btn { display: block; width: 100%; padding: 12px; background: #f7fafc; border: 1px solid #eee; border-top: none; border-radius: 0 0 12px 12px; color: #4a5568; font-size: 14px; cursor: pointer; text-align: center; font-weight: 500; transition: background 0.2s; }
-    .toggle-btn:hover { background: #edf2f7; }
-    .hidden-rows { display: none; }
-    .hidden-rows.show { display: block; }
-    
-    /* 縣市九宮格網格 */
-    .city-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
-    .city-card { border: 1px solid #eee; padding: 18px; text-align: center; border-radius: 10px; cursor: pointer; transition: all 0.2s; background: #fff; }
-    .city-card:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.05); transform: translateY(-1px); border-color: #cbd5e0; }
-    .city-card h4 { font-size: 16px; margin-bottom: 8px; color: #2d3748; }
-    .city-num { color: #718096; font-size: 13px; font-weight: 500; }
-
-    /* === 2. 縣市列表頁與一般列表 === */
-    .page-title { font-size: 28px; font-weight: bold; color: #1a365d; margin-bottom: 30px; text-align: center; }
-    .water-list-item { padding: 20px; border: 1px solid #eee; border-radius: 10px; margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
-    .water-list-item:hover { background: #f7fafc; border-color: #cbd5e0; }
-    .water-list-item h3 { color: #1a365d; font-size: 18px; margin-bottom: 5px; }
-    .water-list-item p { color: #4a5568; font-size: 14px; }
-    .no-data-msg { text-align: center; color: #a0aec0; padding: 40px; border: 1px dashed #e2e8f0; border-radius: 10px; font-size: 15px; }
-
-    /* === 3. 社團網頁樣式 === */
-    .officer-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 40px; }
-    .officer-card { border: 1px solid #e2e8f0; border-left: 4px solid #4a5568; padding: 15px 20px; border-radius: 8px; background: #f8fafc; }
-    .officer-title { font-size: 13px; color: #718096; font-weight: bold; text-transform: uppercase; margin-bottom: 3px; }
-    .officer-name { font-size: 16px; font-weight: 600; }
-
-    /* === 4. 詳細資料頁樣式 === */
-    .detail-box { display: flex; gap: 40px; align-items: flex-start; margin-top: 20px; }
-    .detail-img { flex: 1; text-align: center; }
-    .detail-img img { max-width: 100%; max-height: 480px; border-radius: 8px; border: 1px solid #eee; }
-    .detail-info { flex: 1; }
-    .info-group { margin-bottom: 25px; border-bottom: 1px solid #f7fafc; padding-bottom: 20px; }
-    .info-group:last-child { border-bottom: none; }
-    .info-label { font-size: 13px; color: #a0aec0; margin-bottom: 6px; font-weight: bold; }
-    .info-value { font-size: 16px; color: #2d3748; }
-    .info-value a { color: #0056b3; text-decoration: none; font-weight: 500; }
-    .info-value a:hover { text-decoration: underline; }
-    
-    /* badges 標籤樣式 */
-    .badge { display: inline-block; padding: 2px 8px; font-size: 12px; font-weight: bold; border-radius: 4px; margin-left: 8px; vertical-align: middle; }
-    .badge-club { background: #e2e8f0; color: #4a5568; }
-    .badge-officer { background: #feebc8; color: #c05621; }
-
-    /* 響應式手機調整 */
-    @media (max-width: 768px) {
-      .hero-section { flex-direction: column; text-align: center; gap: 20px; }
-      .city-grid, .officer-grid { grid-template-columns: repeat(2, 1fr); }
-      .detail-box { flex-direction: column; }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全台飲水機觀測站</title>
+    <!-- 📊 線上載入輕量美觀的 Chart.js 繪圖庫 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* 精緻的極簡風格全面回歸 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        body { background-color: #fafafa; color: #1a1a1a; line-height: 1.5; }
+        a { color: #0066cc; text-decoration: none; cursor: pointer; }
+        a:hover { text-decoration: underline; }
+        header { background: #ffffff; border-bottom: 1px solid #eaeaea; padding: 15px 20px; position: sticky; top: 0; z-index: 100; display: flex; justify-content: space-between; align-items: center; }
+        .logo { font-weight: bold; font-size: 1.2rem; }
+        nav a { margin-left: 15px; color: #666; font-size: 0.95rem; }
+        nav a.active { color: #1a1a1a; font-weight: bold; }
+        .container { max-width: 1000px; margin: 30px auto; padding: 0 20px; }
+        .loading { text-align: center; padding: 50px; color: #888; font-size: 1.1rem; }
+        .hidden { display: none !important; }
+        
+        /* 區塊樣式 */
+        .card { background: #ffffff; border: 1px solid #eaeaea; border-radius: 8px; padding: 20px; margin-bottom: 25px; }
+        h2 { font-size: 1.3rem; margin-bottom: 15px; font-weight: 600; color: #333; border-bottom: 1px solid #f0f0f0; padding-bottom: 8px; }
+        
+        /* 圖表專用容器 */
+        .chart-container { position: relative; margin: auto; height: 320px; width: 100%; display: flex; justify-content: center; }
+        
+        /* 列表與排行樣式 */
+        .list-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f9f9f9; }
+        .list-item:last-child { border-bottom: none; }
+        .rank-badge { font-weight: bold; margin-right: 10px; color: #888; min-width: 25px; display: inline-block; }
+        .rank-1, .rank-2, .rank-3 { color: #1a1a1a; }
+        .toggle-btn { display: block; width: 100%; text-align: center; padding: 10px; background: #f5f5f5; border: 1px solid #eaeaea; border-radius: 6px; margin-top: 10px; color: #555; font-size: 0.9rem; }
+        
+        /* 詳細頁與社團專用雙欄排版 */
+        .detail-layout { display: flex; flex-direction: column; gap: 24px; }
+        @media(min-width: 768px) { .detail-layout { flex-direction: row; } }
+        .detail-main { flex: 1.2; }
+        .detail-side { flex: 0.8; display: flex; flex-direction: column; gap: 20px; }
+        
+        .detail-name { font-size: 1.6rem; font-weight: bold; margin-bottom: 15px; padding: 12px 15px; background: #f0f0f0; border-radius: 6px; color: #1a1a1a; line-height: 1.4; }
+        .detail-img-container { width: 100%; background: #ffffff; border: 1px solid #eaeaea; border-radius: 6px; overflow: hidden; padding: 10px; text-align: center; }
+        .detail-img { max-width: 100%; max-height: 550px; object-fit: contain; border-radius: 4px; }
+        .detail-address-block { margin-top: 15px; font-size: 1rem; color: #333; background: #fff; border: 1px solid #eaeaea; padding: 12px 15px; border-radius: 6px; }
+        .badge { display: inline-block; padding: 2px 8px; background: #e0f0ff; color: #0066cc; font-size: 0.8rem; font-weight: bold; border-radius: 4px; margin-left: 5px; }
+        
+        /* 舊版精華樣式優化 */
+        .club-header { text-align: center; padding: 30px 0; border-bottom: 2px solid #1a1a1a; margin-bottom: 30px; }
+        .club-header h1 { font-size: 2.2rem; font-weight: bold; color: #1a1a1a; letter-spacing: 1px; }
+        
+        .info-link-block { display: flex; align-items: center; gap: 10px; font-size: 1.05rem; }
+        .info-link-block span { color: #666; width: 60px; display: inline-block; }
+        
+        .mission-list { padding-left: 20px; line-height: 1.8; font-size: 1.05rem; }
+        .mission-list li { margin-bottom: 8px; font-weight: 500; }
+        
+        .exam-btn { display: block; text-align: center; padding: 15px; background: #1a1a1a; color: #ffffff; border-radius: 6px; font-weight: bold; font-size: 1.1rem; text-decoration: none; transition: background 0.2s; }
+        .exam-btn:hover { background: #333; text-decoration: none; }
+    </style>
 </head>
 <body>
 
-  <header>
-    <div class="nav-container">
-      <a class="logo-area" onclick="navigate('/')">
-        <h1>飲水機</h1>
-        <p>Water dispenser</p>
-      </a>
-      <div class="nav-links">
-        <span id="nav-home" onclick="navigate('/')">首頁</span>
-        <span id="nav-club" onclick="navigate('/club')">飲水機研究社</span>
-      </div>
-    </div>
-  </header>
+    <header>
+        <div class="logo"><a href="#/">飲水機觀測站</a></div>
+        <nav>
+            <a href="#/" id="nav-home">首頁</a>
+            <a href="#/club" id="nav-club">飲水機研究社</a>
+        </nav>
+    </header>
 
-  <div class="container">
-    
-    <div id="page-home" class="page">
-      <div class="hero-section">
-        <div class="hero-left">
-          <div class="counter-box"><span id="total-count">0</span>台</div>
-          <div style="font-size:20px; color:#4a5568; font-weight:500;">全台高中飲水機資料庫</div>
-        </div>
-        <div class="hero-right">
-          <svg width="120" height="180" viewBox="0 0 100 150" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="100" height="150" rx="8" fill="#E2E8F0"/>
-            <rect x="10" y="10" width="80" height="35" rx="4" fill="#1A202C"/>
-            <circle cx="30" cy="28" r="4" fill="#E53E3E"/>
-            <circle cx="70" cy="28" r="4" fill="#3182CE"/>
-            <rect x="40" y="22" width="20" height="12" rx="2" fill="#4A5568"/>
-            <rect x="25" y="65" width="10" height="15" rx="2" fill="#A0AEC0"/>
-            <rect x="65" y="65" width="10" height="15" rx="2" fill="#A0AEC0"/>
-            <path d="M30 80 V90" stroke="#4A5568" stroke-width="3" stroke-linecap="round"/>
-            <path d="M70 80 V90" stroke="#4A5568" stroke-width="3" stroke-linecap="round"/>
-            <rect x="15" y="105" width="70" height="35" rx="4" fill="#CBD5E0"/>
-          </svg>
-        </div>
-      </div>
+    <div class="container">
+        <div id="loading-view" class="loading">正在向雲端讀取飲水機即時數據...</div>
 
-      <h3 class="section-title">個人粉絲排行榜</h3>
-      <div class="list-container" id="personal-rank-list"></div>
-
-      <h3 class="section-title">各縣市總數統計</h3>
-      <div class="list-container">
-        <div id="city-rank-top10"></div>
-        <div id="city-rank-hidden" class="hidden-rows"></div>
-        <button id="city-toggle-btn" class="toggle-btn" onclick="toggleCityRank()">展開查看全台名次 ↓</button>
-      </div>
-
-      <h3 class="section-title">全台戰區目錄</h3>
-      <div class="city-grid" id="all-cities-grid"></div>
-    </div>
-
-    <div id="page-city" class="page">
-      <h2 class="page-title" id="city-page-title">縣市名稱</h2>
-      <div id="city-water-list"></div>
-    </div>
-
-    <div id="page-club" class="page">
-      <h2 class="page-title">飲水機研究社</h2>
-      
-      <h3 class="section-title" style="margin-top:0;">社團幹部</h3>
-      <div class="officer-grid" id="club-officers"></div>
-
-      <h3 class="section-title">社團成員</h3>
-      <div class="list-container" id="club-members-list"></div>
-    </div>
-
-    <div id="page-detail" class="page">
-      <h2 class="page-title" id="detail-main-title">詳細資料</h2>
-      <div class="detail-box">
-        <div class="detail-img">
-          <img id="detail-img-src" src="" alt="飲水機照片" style="background: #f7fafc; min-height: 200px;">
-        </div>
-        <div class="detail-info">
-          <div class="info-group">
-            <div class="info-label">主要學校</div>
-            <div class="info-value" id="detail-school" style="font-size:20px; font-weight:bold; color:#1a365d;">學校名稱</div>
-          </div>
-          <div class="info-group" id="detail-location-group">
-            <div class="info-label">具體安裝位置</div>
-            <div class="info-value" id="detail-location">-</div>
-          </div>
-          <div class="info-group">
-            <div class="info-label">即時粉絲數量</div>
-            <div class="info-value" style="font-size:24px; font-weight:bold; color:#2d3748;"><span id="detail-followers">0</span></div>
-          </div>
-          <div class="info-group">
-            <div class="info-label">榮譽稱號</div>
-            <div class="info-value" id="detail-title" style="font-weight:500;">-</div>
-          </div>
-          <div class="info-group">
-            <div class="info-label">社群連結</div>
-            <div class="info-value"><a id="detail-threads-link" href="#" target="_blank">前往 Threads 專頁</a></div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-  </div>
-
-  <script>
-    const BASE_URL = "https://script.google.com/macros/s/AKfycbyAw_RaACLaX8cTCcHLl3aqGvZrXcn4g-xPB76xgZZxw8_UeoiyGDCzJyy5mZ1tkL0L/exec";
-    
-    let globalData = [];
-    const ALL_TW_CITIES = ["臺北市", "新北市", "基隆市", "桃園市", "新竹縣", "新竹市", "苗栗縣", "臺中市", "彰化縣", "南投縣", "雲林縣", "嘉義縣", "嘉義市", "臺南市", "高雄市", "屏東縣", "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣"];
-
-    // 🛠️ 精確對齊你試算表欄位的大腦，徹底解決 undefined 問題！
-    function mapRawData(rawItems) {
-      return rawItems.map(item => {
-        // 修正並補齊縣市名稱，如「高雄」轉為「高雄市」、「宜蘭縣」保留
-        let cityFix = String(item["縣市"] || "").trim();
-        if (cityFix && !cityFix.endsWith("縣") && !cityFix.endsWith("市")) {
-          if (["臺北", "新北", "基隆", "桃園", "新竹", "苗栗", "臺中", "彰化", "南投", "雲林", "嘉義", "臺南", "高雄", "屏東", "宜蘭", "花蓮", "臺東", "澎湖", "金門", "連江"].includes(cityFix)) {
-            cityFix = (["新竹", "苗栗", "彰化", "南投", "雲林", "嘉義", "屏東", "宜蘭", "花蓮", "臺東"].includes(cityFix)) ? cityFix + "縣" : cityFix + "市";
-          }
-        }
-        if (cityFix === "台北市") cityFix = "臺北市";
-        if (cityFix === "台中市") cityFix = "臺中市";
-        if (cityFix === "台南市") cityFix = "臺南市";
-        if (cityFix === "台東縣") cityFix = "臺東縣";
-
-        return {
-          username: String(item["ID"] || "").trim(),
-          brand: String(item["品牌"] || "").trim(),
-          title: String(item["稱號"] || "暫無稱號").trim(),
-          school: String(item["學校"] || "未知學校").trim(),
-          city: cityFix || "未知縣市",
-          address: String(item["地址"] || "").trim(),
-          location: String(item["位置"] || "").trim(), // 如果為空，後面會自動防呆隱藏
-          imageUrl: String(item["圖片"] || "").trim(),
-          followers: parseInt(item["最新粉絲數"]) || 0,
-          isClubMember: String(item["是否入社"] || "").trim(),
-          officerTitle: String(item["社團職稱"] || "").trim()
-        };
-      }).filter(item => item.username !== "");
-    }
-
-    function handleRouting() {
-      const hash = window.location.hash;
-      document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-      document.querySelectorAll('.nav-links span').forEach(s => s.classList.remove('active'));
-
-      if (!hash || hash === '#/' || hash === '#') {
-        document.getElementById('page-home').classList.add('active');
-        document.getElementById('nav-home').classList.add('active');
-        renderHome();
-      } else if (hash === '#/club') {
-        document.getElementById('page-club').classList.add('active');
-        document.getElementById('nav-club').classList.add('active');
-        renderClub();
-      } else if (hash.startsWith('#/city/')) {
-        const cityName = decodeURIComponent(hash.replace('#/city/', ''));
-        document.getElementById('page-city').classList.add('active');
-        renderCityPage(cityName);
-      } else if (hash.startsWith('#/user/')) {
-        const username = decodeURIComponent(hash.replace('#/user/', ''));
-        document.getElementById('page-detail').classList.add('active');
-        renderDetailPage(username);
-      }
-      window.scrollTo(0, 0);
-    }
-
-    function navigate(path) {
-      window.location.hash = '#' + path;
-    }
-
-    window.addEventListener('hashchange', handleRouting);
-
-    function loadData() {
-      const script = document.createElement('script');
-      script.src = BASE_URL + "?action=read&callback=handleGasResponse";
-      document.body.appendChild(script);
-    }
-
-    window.handleGasResponse = function(rawJson) {
-      globalData = mapRawData(rawJson);
-      document.getElementById('total-count').innerText = globalData.length;
-      handleRouting();
-    }
-
-    function renderHome() {
-      if (globalData.length === 0) return;
-
-      const sortedPersonal = [...globalData].sort((a, b) => b.followers - a.followers);
-      const personalHTML = document.getElementById('personal-rank-list');
-      personalHTML.innerHTML = '';
-      sortedPersonal.slice(0, 10).forEach((item, idx) => {
-        const locInfo = item.location ? ` (${item.location})` : '';
-        personalHTML.innerHTML += `
-          <div class="list-item">
-            <div>
-              <span class="rank-num">${idx + 1}</span>
-              <a class="item-name-link" onclick="navigate('/user/${item.username}')">${item.school}${locInfo}</a>
+        <!-- 🏠 首頁視圖 -->
+        <div id="home-view" class="view hidden">
+            <!-- 1. 全臺飲水機總數 -->
+            <div class="card" style="text-align: center; padding: 40px 20px;">
+                <h1 style="font-size: 3rem; font-weight: bold; color: #1a1a1a;" id="total-count">0 台</h1>
+                <p style="color: #666; margin-top: 5px; font-size: 1.1rem;">全臺飲水機總數</p>
             </div>
-            <div class="item-value">${item.followers.toLocaleString()} 粉絲</div>
-          </div>`;
-      });
 
-      let cityCounts = {};
-      ALL_TW_CITIES.forEach(c => cityCounts[c] = 0);
-      globalData.forEach(item => {
-        if(item.city && cityCounts.hasOwnProperty(item.city)) {
-          cityCounts[item.city]++;
-        }
-      });
-
-      let sortedCities = Object.keys(cityCounts).map(key => {
-        return { name: key, count: cityCounts[key] };
-      }).sort((a, b) => b.count - a.count);
-
-      const top10HTML = document.getElementById('city-rank-top10');
-      const hiddenHTML = document.getElementById('city-rank-hidden');
-      top10HTML.innerHTML = '';
-      hiddenHTML.innerHTML = '';
-
-      sortedCities.forEach((city, idx) => {
-        const itemHTML = `
-          <div class="list-item">
-            <div>
-              <span class="rank-num">${idx + 1}</span>
-              <a class="item-name-link" onclick="navigate('/city/${city.name}')">${city.name}</a>
+            <!-- 2. 個人粉絲排行榜 (TOP 10) -->
+            <div class="card">
+                <h2>個人粉絲排行榜 (TOP 10)</h2>
+                <div id="personal-ranking-list"></div>
             </div>
-            <div class="item-value">${city.count} 台</div>
-          </div>`;
-        
-        if (idx < 10) {
-          top10HTML.innerHTML += itemHTML;
-        } else {
-          hiddenHTML.innerHTML += itemHTML;
+
+            <!-- 3. 各縣市總數統計 -->
+            <div class="card">
+                <h2>各縣市總數統計</h2>
+                <div id="city-ranking-list"></div>
+                <button id="toggle-city-btn" class="toggle-btn">展開查看全臺名次 ↓</button>
+            </div>
+
+            <!-- 4. 飲水機品牌市佔率 -->
+            <div class="card">
+                <h2>飲水機品牌市佔率</h2>
+                <div class="chart-container">
+                    <canvas id="brandPieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- 📍 縣市列表視圖 -->
+        <div id="city-view" class="view hidden">
+            <h2 id="city-view-title" style="font-size: 1.6rem; border: none; margin-bottom: 20px;">縣市</h2>
+            <div class="card">
+                <div id="city-water-list"></div>
+            </div>
+            <a href="#/">&larr; 返回首頁</a>
+        </div>
+
+        <!-- 🥤 社團總部視圖 -->
+        <div id="club-view" class="view hidden">
+            <div class="club-header">
+                <h1>飲水機研究社第0屆</h1>
+            </div>
+            
+            <div class="detail-layout">
+                <!-- 左側：幹部名單與精神宗旨 -->
+                <div class="detail-main">
+                    <div class="card">
+                        <h2>幹部</h2>
+                        <div id="club-officers-container" style="display: flex; flex-direction: column; gap: 15px; margin-top: 10px;">
+                            <!-- 這裡會依序由 JavaScript 動態塞入：社長、副社長、美宣 -->
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>宗旨</h2>
+                        <ul class="mission-list">
+                            <li>1. 飲水機在一起強大</li>
+                            <li>2. 皮炎</li>
+                        </ul>
+                    </div>
+
+                    <div class="card">
+                        <h2>社團成員</h2>
+                        <div id="club-members-list"></div>
+                    </div>
+                </div>
+
+                <!-- 右側：官方資料與互動挑戰 -->
+                <div class="detail-side">
+                    <div class="card">
+                        <h2>官方資料</h2>
+                        <div style="margin-top: 10px;">
+                            <div class="info-link-block">
+                                <span>Threads</span>
+                                <strong><a href="https://www.threads.net/@nwhswater_0th" target="_blank">@nwhswater_0th</a></strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <h2>互動挑戰</h2>
+                        <a href="https://docs.google.com/forms/d/e/1FAIpQLSd33j1gp_Zv37m74f-4rOeLYEYtYQPrc7H9MD1YqSqvyxlfnQ/viewform?pli=1" target="_blank" class="exam-btn">第114514屆飲水機研究社測驗試卷</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔍 詳細資料視圖 -->
+        <div id="user-view" class="view hidden">
+            <div class="detail-layout">
+                <div class="detail-main">
+                    <div class="detail-name" id="det-name">飲水機名字</div>
+                    <div class="detail-img-container">
+                        <img src="" alt="飲水機照片" class="detail-img" id="det-img">
+                    </div>
+                    <div class="detail-address-block">
+                        <strong>地址：</strong><a id="det-location-link" target="_blank" style="color: #0066cc; text-decoration: underline;">地址載入中</a>
+                    </div>
+                </div>
+                
+                <div class="detail-side">
+                    <div>
+                        <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">學校</span>
+                        <strong><a id="det-school-link" target="_blank" style="color: #1a1a1a;">-</a></strong>
+                    </div>
+                    <div>
+                        <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">ID</span>
+                        <strong><a id="det-id-link" target="_blank" style="color: #0066cc;">-</a></strong>
+                    </div>
+                    <div>
+                        <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">稱號</span>
+                        <strong id="det-title">-</strong> <span id="club-badge"></span>
+                    </div>
+                    <div>
+                        <span style="color: #666; font-size: 0.9rem; display: block; margin-bottom: 2px;">品牌</span>
+                        <strong><a id="det-brand-link" target="_blank" style="color: #1a1a1a;">-</a></strong>
+                    </div>
+                    <div style="margin-top: 10px; border-top: 1px solid #f0f0f0; padding-top: 15px;">
+                        <span style="font-size: 0.9rem; color: #666;">最新粉絲數量</span>
+                        <div style="font-size: 2.2rem; font-weight: bold; color: #1a1a1a; margin-top: 2px;" id="det-followers">0</div>
+                    </div>
+                    <div style="font-size: 0.75rem; color: #aaa; margin-top: 5px;">
+                        數據更新時間：<span id="det-time">-</span>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-top: 30px;">
+                <a onclick="window.history.back()">&larr; 返回前一頁</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbyAw_RaACLaX8cTCcHLl3aqGvZrXcn4g-xPB76xgZZxw8_UeoiyGDCzJyy5mZ1tkL0L/exec";
+
+        const ALL_CITIES = [
+            "臺北市", "新北市", "基隆市", "桃園市", "新竹市", "新竹縣", "苗栗縣", "臺中市", 
+            "彰化縣", "南投縣", "雲林縣", "嘉義市", "嘉義縣", "臺南市", "高雄市", "屏東縣", 
+            "宜蘭縣", "花蓮縣", "臺東縣", "澎湖縣", "金門縣", "連江縣"
+        ];
+
+        let rawData = [];
+        let showAllCitiesRanking = false;
+        let myPieChart = null;
+
+        function safeDecode(str) {
+            try {
+                return decodeURIComponent(str);
+            } catch (e) {
+                try {
+                    return unescape(str);
+                } catch (err) {
+                    return str;
+                }
+            }
         }
-      });
 
-      const gridHTML = document.getElementById('all-cities-grid');
-      gridHTML.innerHTML = '';
-      ALL_TW_CITIES.forEach(cityName => {
-        let count = cityCounts[cityName] || 0;
-        gridHTML.innerHTML += `
-          <div class="city-card" onclick="navigate('/city/${cityName}')">
-            <h4>${cityName}</h4>
-            <div class="city-num">${count} 台</div>
-          </div>`;
-      });
-    }
+        function parseFollowersCount(val) {
+            if (!val) return 0;
+            let str = val.toString().toUpperCase().trim();
+            if (str.includes('K')) return parseFloat(str.replace('K', '')) * 1000;
+            if (str.includes('M')) return parseFloat(str.replace('M', '')) * 1000000;
+            let num = parseInt(str.replace(/,/g, ''), 10);
+            return isNaN(num) ? 0 : num;
+        }
 
-    function toggleCityRank() {
-      const hiddenDiv = document.getElementById('city-rank-hidden');
-      const btn = document.getElementById('city-toggle-btn');
-      if (hiddenDiv.classList.contains('show')) {
-        hiddenDiv.classList.remove('show');
-        btn.innerText = "展開查看全台名次 ↓";
-      } else {
-        hiddenDiv.classList.add('show');
-        btn.innerText = "收合全台名次 ↑";
-      }
-    }
+        async function fetchInitialData() {
+            try {
+                const res = await fetch(API_URL);
+                rawData = await res.json();
+                document.getElementById('loading-view').classList.add('hidden');
+                handleRouting();
+            } catch (err) {
+                console.error(err);
+                document.getElementById('loading-view').innerText = "數據讀取失敗，請確認 Apps Script API 連線。";
+            }
+        }
 
-    function renderCityPage(cityName) {
-      document.getElementById('city-page-title').innerText = cityName + " 戰區列表";
-      const listHTML = document.getElementById('city-water-list');
-      listHTML.innerHTML = '';
+        function handleRouting() {
+            const hash = window.location.hash || '#/';
+            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('nav a').forEach(n => n.classList.remove('active'));
 
-      const filtered = globalData.filter(item => item.city === cityName)
-                                 .sort((a, b) => b.followers - a.followers);
+            if (hash === '#/' || hash === '') {
+                document.getElementById('nav-home').classList.add('active');
+                renderHomePage();
+            } else if (hash === '#/club') {
+                document.getElementById('nav-club').classList.add('active');
+                renderClubPage();
+            } else if (hash.startsWith('#/city/')) {
+                const cityName = safeDecode(hash.substring(7));
+                renderCityPage(cityName);
+            } else if (hash.startsWith('#/user/')) {
+                const userId = safeDecode(hash.substring(7));
+                renderUserDetailPage(userId);
+            }
+        }
 
-      if (filtered.length === 0) {
-        listHTML.innerHTML = `<div class="no-data-msg">目前該縣市尚未有入榜的飲水機資料。</div>`;
-      } else {
-        filtered.forEach(item => {
-          const locInfo = item.location ? ` ${item.location}` : '';
-          listHTML.innerHTML += `
-            <div class="water-list-item" onclick="navigate('/user/${item.username}')">
-              <h3>${item.school}${locInfo}</h3>
-              <p>@${item.username} • ${item.followers.toLocaleString()} 粉絲</p>
-            </div>`;
+        function drawBrandChart() {
+            const brandCounts = {};
+            rawData.forEach(item => {
+                let brandName = item.brand ? item.brand.trim() : "";
+                if (!brandName) brandName = "未標記";
+                brandCounts[brandName] = (brandCounts[brandName] || 0) + 1;
+            });
+
+            const labels = Object.keys(brandCounts);
+            const dataValues = Object.values(brandCounts);
+
+            const backgroundColors = [
+                '#4a7c59', '#68809a', '#bda88a', '#bd8a8a', '#8abdac', 
+                '#a38abd', '#8a9fbd', '#9e9e9e', '#cfb497', '#97b2cf'
+            ];
+
+            const ctx = document.getElementById('brandPieChart').getContext('2d');
+            
+            if (myPieChart) {
+                myPieChart.destroy();
+            }
+
+            myPieChart = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        data: dataValues,
+                        backgroundColor: backgroundColors.slice(0, labels.length),
+                        borderWidth: 1,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                font: { size: 13 },
+                                boxWidth: 15
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    let value = context.raw || 0;
+                                    let total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    let percentage = Math.round((value / total) * 100);
+                                    return ` ${label}: ${value} 台 (${percentage}%)`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function renderHomePage() {
+            document.getElementById('home-view').classList.remove('hidden');
+            document.getElementById('total-count').innerText = `${rawData.length} 台`;
+
+            drawBrandChart();
+
+            const personalSorted = [...rawData].sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
+            const personalListHtml = personalSorted.slice(0, 10).map((item, idx) => `
+                <div class="list-item">
+                    <div>
+                        <span class="rank-badge ${idx < 3 ? 'rank-' + (idx + 1) : ''}">${idx + 1}</span>
+                        <a href="#/user/${encodeURIComponent(item.id)}">${item.name || item.id}</a>
+                        <span style="font-size:0.85rem; color:#888; margin-left:8px;">(${item.school})</span>
+                    </div>
+                    <div style="font-weight:600;">${item.followers} 粉絲</div>
+                </div>
+            `).join('');
+            document.getElementById('personal-ranking-list').innerHTML = personalListHtml || '<div style="color:#aaa;">目前尚無資料</div>';
+
+            const cityCounts = {};
+            ALL_CITIES.forEach(c => cityCounts[c] = 0);
+            rawData.forEach(item => { if (cityCounts[item.city] !== undefined) cityCounts[item.city]++; });
+
+            const citySorted = ALL_CITIES.map(c => ({ name: c, count: cityCounts[c] })).sort((a, b) => b.count - a.count);
+            const displayCityLimit = showAllCitiesRanking ? citySorted.length : 10;
+            const cityListHtml = citySorted.slice(0, displayCityLimit).map((city, idx) => `
+                <div class="list-item">
+                    <div>
+                        <span class="rank-badge ${idx < 3 ? 'rank-' + (idx + 1) : ''}">${idx + 1}</span>
+                        <a href="#/city/${encodeURIComponent(city.name)}">${city.name}</a>
+                    </div>
+                    <div style="font-weight:600; color:#555;">${city.count} 台</div>
+                </div>
+            `).join('');
+            document.getElementById('city-ranking-list').innerHTML = cityListHtml;
+            document.getElementById('toggle-city-btn').innerText = showAllCitiesRanking ? "收起全臺名次 ↑" : "展開查看全臺名次 ↓";
+        }
+
+        document.getElementById('toggle-city-btn').addEventListener('click', () => {
+            showAllCitiesRanking = !showAllCitiesRanking;
+            renderHomePage();
         });
-      }
-    }
 
-    function renderClub() {
-      const officerHTML = document.getElementById('club-officers');
-      const memberHTML = document.getElementById('club-members-list');
-      officerHTML.innerHTML = '';
-      memberHTML.innerHTML = '';
+        function renderCityPage(cityName) {
+            document.getElementById('city-view').classList.remove('hidden');
+            document.getElementById('city-view-title').innerText = `📍 ${cityName}`;
 
-      const clubData = globalData.filter(item => item.isClubMember === "是");
-      const officers = clubData.filter(item => item.officerTitle !== "");
-      const sortedMembers = [...clubData].sort((a, b) => b.followers - a.followers);
+            const cityItems = rawData.filter(item => item.city === cityName);
+            cityItems.sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
 
-      if (officers.length === 0) {
-        officerHTML.innerHTML = `<p style="color:#a0aec0; font-size:14px; padding:10px;">目前尚未設定幹部資料。</p>`;
-      } else {
-        officers.forEach(item => {
-          officerHTML.innerHTML += `
-            <div class="officer-card">
-              <div class="officer-title">${item.officerTitle}</div>
-              <div class="officer-name">
-                <a class="item-name-link" onclick="navigate('/user/${item.username}')">${item.school}</a>
-              </div>
-            </div>`;
-        });
-      }
+            let html = "";
+            if (cityItems.length === 0) {
+                html = `<div style="color:#aaa; text-align:center; padding:30px;">目前該縣市尚未有飲水機資料。</div>`;
+            } else {
+                html = cityItems.map((item, idx) => `
+                    <div class="list-item">
+                        <div>
+                            <span class="rank-badge ${idx < 3 ? 'rank-' + (idx + 1) : ''}">${idx + 1}</span>
+                            <a href="#/user/${encodeURIComponent(item.id)}" style="font-weight:600; font-size:1.1rem;">${item.name || '未命名'}</a>
+                            <div style="font-size:0.85rem; color:#666; margin-top:3px;">@${item.id} ｜ ${item.school}</div>
+                        </div>
+                        <div style="font-weight:bold; color:#333;">${item.followers} 粉絲</div>
+                    </div>
+                `).join('');
+            }
+            document.getElementById('city-water-list').innerHTML = html;
+        }
 
-      if (sortedMembers.length === 0) {
-        memberHTML.innerHTML = `<div class="no-data-msg">目前研究社尚無成員資料。</div>`;
-      } else {
-        sortedMembers.forEach((item, idx) => {
-          const tag = item.officerTitle ? `<span class="badge badge-officer">${item.officerTitle}</span>` : '';
-          const locInfo = item.location ? ` (${item.location})` : '';
-          memberHTML.innerHTML += `
-            <div class="list-item">
-              <div>
-                <span class="rank-num">${idx + 1}</span>
-                <a class="item-name-link" onclick="navigate('/user/${item.username}')">${item.school}${locInfo}</a>
-                ${tag}
-              </div>
-              <div class="item-value">${item.followers.toLocaleString()} 粉絲</div>
-            </div>`;
-        });
-      }
-    }
+        function renderClubPage() {
+            document.getElementById('club-view').classList.remove('hidden');
 
-    function renderDetailPage(username) {
-      const item = globalData.find(p => p.username === username);
-      if (!item) return;
+            // 👑 排序幹部名單（依據：社長 -> 副社長 -> 其他幹部）
+            const officers = rawData.filter(item => item.clubRole && item.clubRole.trim() !== "");
+            
+            const roleOrder = { "社長": 1, "副社長": 2, "美宣": 3 };
+            officers.sort((a, b) => {
+                let rA = roleOrder[a.clubRole.trim()] || 99;
+                let rB = roleOrder[b.clubRole.trim()] || 99;
+                return rA - rB;
+            });
 
-      let badgeHTML = '';
-      if (item.officerTitle) {
-        badgeHTML = `<span class="badge badge-officer">${item.officerTitle}</span>`;
-      } else if (item.isClubMember === '是') {
-        badgeHTML = `<span class="badge badge-club">社團成員 🥤</span>`;
-      }
+            const officersHtml = officers.map(o => `
+                <div style="padding: 12px 15px; background: #fafafa; border: 1px solid #eaeaea; border-radius: 6px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <span style="font-weight: bold; color: ${o.clubRole.trim() === '社長' ? '#b58900' : o.clubRole.trim() === '副社長' ? '#586e75' : '#0066cc'}; margin-right: 10px;">
+                            ${o.clubRole}
+                        </span>
+                        <a href="#/user/${encodeURIComponent(o.id)}" style="font-weight: 600;">${o.name || o.id}</a>
+                    </div>
+                    <span style="font-size: 0.85rem; color: #888;">${o.school}</span>
+                </div>
+            `).join('');
+            document.getElementById('club-officers-container').innerHTML = officersHtml || '<div style="color:#aaa;">目前尚未設定幹部職位</div>';
 
-      document.getElementById('detail-main-title').innerText = item.school;
-      document.getElementById('detail-school').innerHTML = item.school + badgeHTML;
-      
-      if (item.location) {
-        document.getElementById('detail-location-group').style.display = 'block';
-        document.getElementById('detail-location').innerText = item.location;
-      } else {
-        document.getElementById('detail-location-group').style.display = 'none';
-      }
+            // 👥 成員名單
+            const members = rawData.filter(item => item.isClub === "慢" || item.isClub === "是");
+            members.sort((a, b) => parseFollowersCount(b.followers) - parseFollowersCount(a.followers));
 
-      document.getElementById('detail-followers').innerText = item.followers.toLocaleString() + " 粉絲";
-      document.getElementById('detail-title').innerText = item.title;
-      document.getElementById('detail-threads-link').href = `https://www.threads.net/@${item.username}`;
+            const membersHtml = members.map((m, idx) => `
+                <div class="list-item">
+                    <div>
+                        <span class="rank-badge">${idx+1}</span>
+                        <a href="#/user/${encodeURIComponent(m.id)}">${m.name || m.id}</a>
+                        <span style="font-size:0.85rem; color:#888; margin-left:8px;">(${m.school})</span>
+                    </div>
+                    <div style="font-size:0.9rem; color:#555;">${m.followers} 粉絲</div>
+                </div>
+            `).join('');
+            document.getElementById('club-members-list').innerHTML = membersHtml || '<div style="color:#aaa;">目前尚無成員加入</div>';
+        }
 
-      if (item.imageUrl && item.imageUrl.startsWith('http')) {
-        document.getElementById('detail-img-src').style.display = 'block';
-        document.getElementById('detail-img-src').src = item.imageUrl;
-      } else {
-        document.getElementById('detail-img-src').src = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23f7fafc'/><text x='50%27 y='50%27 font-size='10' fill='%23a0aec0' text-anchor='middle' alignment-baseline='middle'>暫無照片</text></svg>";
-      }
-    }
+        function renderUserDetailPage(userId) {
+            document.getElementById('user-view').classList.remove('hidden');
 
-    loadData();
-  </script>
+            const item = rawData.find(u => u.id === userId);
+            if (!item) {
+                document.getElementById('det-name').innerText = "找不到該飲水機資料";
+                return;
+            }
+
+            document.getElementById('det-name').innerText = item.name || "未命名飲水機";
+            document.getElementById('det-img').src = item.imageUrl || "https://via.placeholder.com/400x400?text=No+Image";
+            
+            const locLink = document.getElementById('det-location-link');
+            locLink.innerText = item.location || "未提供詳細地址";
+            if (item.mapUrl) {
+                locLink.href = item.mapUrl;
+                locLink.style.pointerEvents = "auto";
+                locLink.style.textDecoration = "underline";
+            } else {
+                locLink.removeAttribute('href');
+                locLink.style.pointerEvents = "none";
+                locLink.style.textDecoration = "none";
+            }
+
+            const schoolLink = document.getElementById('det-school-link');
+            schoolLink.innerText = item.school || "-";
+            if (item.schoolUrl) {
+                schoolLink.href = item.schoolUrl;
+                schoolLink.style.textDecoration = "underline";
+                schoolLink.style.color = "#0066cc";
+            } else {
+                schoolLink.removeAttribute('href');
+                schoolLink.style.textDecoration = "none";
+                schoolLink.style.color = "#1a1a1a";
+            }
+            
+            const brandLink = document.getElementById('det-brand-link');
+            brandLink.innerText = item.brand || "未標記";
+            if (item.brandUrl) {
+                brandLink.href = item.brandUrl;
+                brandLink.style.textDecoration = "underline";
+                brandLink.style.color = "#0066cc";
+                brandLink.style.pointerEvents = "auto";
+            } else {
+                brandLink.removeAttribute('href');
+                brandLink.style.textDecoration = "none";
+                brandLink.style.color = "#1a1a1a";
+                brandLink.style.pointerEvents = "none";
+            }
+            
+            const linkEl = document.getElementById('det-id-link');
+            linkEl.innerText = `@${item.id}`;
+            linkEl.href = `https://www.threads.net/@${item.id}`;
+
+            document.getElementById('det-title').innerText = item.title || "無";
+            document.getElementById('det-followers').innerText = item.followers || "0";
+            document.getElementById('det-time').innerText = item.updateTime || "-";
+
+            const badgeEl = document.getElementById('club-badge');
+            if (item.clubRole) {
+                badgeEl.innerText = `👑 社團${item.clubRole}`;
+                badgeEl.className = "badge";
+            } else if (item.isClub === "是" || item.isClub === "慢") {
+                badgeEl.innerText = "🥤 社團成員";
+                badgeEl.className = "badge";
+            } else {
+                badgeEl.innerText = "";
+                badgeEl.className = "";
+            }
+        }
+
+        window.addEventListener('hashchange', handleRouting);
+        fetchInitialData();
+    </script>
 </body>
 </html>
