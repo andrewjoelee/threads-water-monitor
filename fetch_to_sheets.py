@@ -14,7 +14,8 @@ WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyAw_RaACLaX8cTCcHLl3aqGv
 THREADS_ACCOUNTS = [
 "waterdispenserylshlinfeng2f2nd",
 "ymhs_waterdispenser",
-"fhsh_waterdispenser"] 
+"fhsh_waterdispenser",
+"waterdispenser_wlsh_zhuqing1"] 
 
 
 def get_threads_follower(page, username):
