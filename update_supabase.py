@@ -9,35 +9,26 @@ SUPABASE_ANON_KEY = "sb_publishable_FPMDx4PO77A99RzoVbs3XQ_P9R5aOFP"
 # 初始化 Supabase 客戶端
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
-def fetch_threads_followers_via_api(threads_id):
+def fetch_threads_followers_via_api(threads_username):
     """
-    透過公共的免驗證第三方 API 接口直接撈取 JSON 數據，
-    完全繞過 GitHub Actions 的 IP 被 Threads 網頁阻擋的問題。
+    透過公共 API 接口直接撈取 JSON 數據，避免 GitHub Actions 的 IP 被 Threads 網頁阻擋。
     """
-    # 這裡使用一個常用的無官方限制代理接口（如果失效，程式會自動切換）
-    url = f"https://ungh.cc/users/{threads_id}"
-    
+    url = f"https://ungh.cc/users/{threads_username}"
     try:
         response = requests.get(url, timeout=10)
         if response.status_code == 200:
             data = response.json()
-            # 檢查 API 返回的結構是否包含使用者資訊
             if "user" in data and "followers" in data["user"]:
                 return int(data["user"]["followers"])
-            
-        # 備用方案：嘗試另一個公共 API
-        fallback_url = f"https://api.threads.net/v1/user/{threads_id}" # 示意性質，部分公共鏡像可用
-        # 如果第一方案就成功，就不會走到這
-        
         return None
     except Exception as e:
-        print(f"💥 使用 API 讀取 @{threads_id} 出錯: {e}")
+        print(f"💥 使用 API 讀取 @{threads_username} 出錯: {e}")
         return None
 
 def main():
     print("🔄 開始自 Supabase 讀取目前飲水機清單...")
-    # 🎯 讀取你新設定的正確欄位名稱
-    response = supabase.table("water_dispensers").select("threads_id").execute()
+    # 🎯 這裡撈取「id」，因為你目前的資料表裡，id 欄位放的是英文帳號（例如 fhsh_waterdispenser）
+    response = supabase.table("water_dispensers").select("id").execute()
     items = response.data
     
     if not items:
@@ -45,30 +36,30 @@ def main():
         return
 
     for item in items:
-        threads_id = item['threads_id']
+        # 💡 真正的英文 Username 在 id 欄位裡
+        threads_username = item['id']
         
-        print(f"🔎 正在透過 API 撈取 @{threads_id} 的最新數據...")
-        followers_count = fetch_threads_followers_via_api(threads_id)
+        print(f"🔎 正在透過 API 撈取真正帳號 @{threads_username} 的最新數據...")
+        followers_count = fetch_threads_followers_via_api(threads_username)
         
         if followers_count is not None:
             print(f"✨ 成功抓取！粉絲數: {followers_count}")
             
-            # 取得台灣當前時間（GitHub 伺服器通常是 UTC，我們直接格式化）
             current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             
-            # 🚀 寫入 Supabase
+            # 🚀 依據你現有的「id」欄位進行更新
             supabase.table("water_dispensers") \
                 .update({
-                    "followers": str(followers_count), # 配合你資料表目前的 text 格式
+                    "followers": str(followers_count), # 配合你資料庫的 text 格式
                     "last_updated_time": current_time
                 }) \
-                .eq("threads_id", threads_id) \
+                .eq("id", threads_username) \
                 .execute()
-            print(f"✅ @{threads_id} 雲端數據同步成功！")
+            print(f"✅ @{threads_username} 雲端數據同步成功！")
         else:
-            print(f"⚠️ API 無法取得 @{threads_id} 數據，跳過不更新")
+            print(f"⚠️ API 無法取得 @{threads_username} 數據，跳過不更新")
             
-        time.sleep(3) # 稍微間隔即可
+        time.sleep(3)
 
 if __name__ == "__main__":
     main()
