@@ -1,7 +1,7 @@
 import os
 import re
 import time
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from playwright.sync_api import sync_playwright
 from supabase import create_client, Client
 
@@ -13,17 +13,16 @@ SUPABASE_ANON_KEY = "sb_publishable_FPMDx4PO77A99RzoVbs3XQ_P9R5aOFP"
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY)
 
 def get_threads_follower(page, username):
-    """【完全保留你原本的爬蟲原理】進階版：抓取單一 Threads 帳號的粉絲數"""
+    """【完全保留你原本的爬蟲原理】使用 Playwright 模擬真人載入網頁撈取粉絲數"""
     target_url = f"https://www.threads.net/@{username}"
     try:
         # 模擬真人正常滾動載入
         page.goto(target_url, wait_until="domcontentloaded", timeout=60000)
         page.wait_for_timeout(3000) 
 
-        # 方案 A：直接從網頁的 meta description 撈，這最穩定、最不受網頁改版影響
+        # 方案 A：直接從網頁的 meta description 撈
         meta_desc = page.locator('meta[name="description"]').get_attribute("content")
         if meta_desc:
-            # 匹配例如 "9.9M followers"、"450K 位粉絲"、"1,234 followers"
             meta_match = re.search(r"([\d\.,\s]+[M|K|萬|億]?)\s*(followers|位粉絲)", meta_desc, re.IGNORECASE)
             if meta_match:
                 return meta_match.group(1).strip()
@@ -43,7 +42,7 @@ def get_threads_follower(page, username):
 def main():
     print("🔄 [開始] 自 Supabase 讀取目前排整齊的飲水機清單...")
     
-    # 🎯 完美對齊：直接撈取你最新的 threads_id 欄位（英文帳號）
+    # 撈取你最新的 threads_id 欄位（英文帳號）
     response = supabase.table("water_dispensers").select("threads_id").execute()
     items = response.data
     
@@ -51,11 +50,9 @@ def main():
         print("📭 資料庫內沒有資料！")
         return
         
-    # 將資料庫撈出來的 threads_id 組成要爬取的帳號清單
     threads_accounts = [item['threads_id'] for item in items if item.get('threads_id')]
     print(f"📋 偵測到共有 {len(threads_accounts)} 個飲水機帳號準備更新...")
 
-    # 【完全套用你原本最穩定的 Playwright 核心】
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context(
@@ -68,25 +65,26 @@ def main():
             followers = get_threads_follower(page, username)
             print(f"-> 粉絲數結果: {followers}")
 
-            # 只要抓取狀態正常，就直接同步寫入 Supabase
             if followers not in ["抓取錯誤", "未公開/格式變更"]:
-                # 取得當前時間
-                current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
+                # 🎯 核心修正：強制轉換為台灣時區 (UTC+8)
+                tz_taiwan = timezone(timedelta(hours=8))
+                current_time = datetime.now(tz_taiwan).strftime("%Y-%m-%d %H:%M:%S")
                 
-                print(f"💾 [同步] 正在更新數據回 Supabase...")
-                # 🚀 完美對齊：依據 threads_id 更新該欄位的粉絲數與時間
+                print(f"💾 [同步] 正在安全覆寫更新數據回 Supabase (台灣時間: {current_time})...")
+                
+                # 使用 upsert 對齊主鍵 threads_id，直接覆寫更新
                 supabase.table("water_dispensers") \
-                    .update({
+                    .upsert({
+                        "threads_id": username,
                         "followers": followers, 
                         "last_updated_time": current_time
-                    }) \
-                    .eq("threads_id", username) \
+                    }, on_conflict="threads_id") \
                     .execute()
+                    
                 print(f"✅ @{username} 資料庫數據同步成功！")
             else:
                 print(f"⚠️ @{username} 抓取數值異常 ({followers})，跳過不更新資料庫")
 
-            # 保持原有的有禮貌延時
             time.sleep(4)
 
         browser.close()
