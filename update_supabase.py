@@ -29,8 +29,8 @@ def parse_followers_to_int(val):
         print(f"⚠️ 數字轉換失敗 ({val}): {e}")
         return 0
 
-def fetch_threads_followers(threads_account_id):
-    url = f"https://www.threads.net/@{threads_account_id}"
+def fetch_threads_followers(id):
+    url = f"https://www.threads.net/@{id}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -61,7 +61,7 @@ def fetch_threads_followers(threads_account_id):
                 
         return None
     except Exception as e:
-        print(f"💥 爬取 @{threads_account_id} 出錯: {e}")
+        print(f"💥 爬取 @{id} 出錯: {e}")
         return None
 
 def main():
@@ -76,10 +76,10 @@ def main():
 
     for item in items:
         # 💡 關鍵修正：真正的 Threads 帳號就是你的 id 欄位
-        threads_account_id = item['id']
+        id = item['id']
         
-        print(f"🔎 正在爬取 @{threads_account_id} 的最新 Threads 數據...")
-        raw_followers = fetch_threads_followers(threads_account_id)
+        print(f"🔎 正在爬取 @{id} 的最新 Threads 數據...")
+        raw_followers = fetch_threads_followers(id)
         
         if raw_followers is not None:
             int_followers = parse_followers_to_int(raw_followers)
@@ -93,11 +93,11 @@ def main():
                     "followers": int_followers, 
                     "last_updated_time": current_time
                 }) \
-                .eq("id", threads_account_id) \
+                .eq("id", id) \
                 .execute()
-            print(f"✅ @{threads_account_id} 雲端數據同步成功！")
+            print(f"✅ @{id} 雲端數據同步成功！")
         else:
-            print(f"⚠️ 無法取得 @{threads_account_id} 數據，跳過不更新")
+            print(f"⚠️ 無法取得 @{id} 數據，跳過不更新")
             
         time.sleep(5)
 
