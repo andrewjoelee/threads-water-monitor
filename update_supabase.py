@@ -29,8 +29,8 @@ def parse_followers_to_int(val):
         print(f"⚠️ 數字轉換失敗 ({val}): {e}")
         return 0
 
-def fetch_threads_followers(id):
-    url = f"https://www.threads.net/@{id}"
+def fetch_threads_followers(threads_id):
+    url = f"https://www.threads.net/@{threads_id}"
     headers = {
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36",
         "Accept-Language": "zh-TW,zh;q=0.9,en-US;q=0.8,en;q=0.7",
@@ -40,7 +40,7 @@ def fetch_threads_followers(id):
         if response.status_code == 200:
             soup = BeautifulSoup(response.text, 'html.parser')
             
-            # 策略 1：撈 meta
+            # 策略 1：撈 meta description
             meta_tag = soup.find('meta', property='og:description')
             if meta_tag:
                 desc = meta_tag.get('content', '')
@@ -48,26 +48,26 @@ def fetch_threads_followers(id):
                 if match:
                     return match.group(1).strip()
             
-            # 策略 2：直接撈網頁底層變數
+            # 策略 2：直接撈網頁底層 JSON 變數
             html_str = response.text
             match_fallback = re.search(r'"follower_count":\s*([0-9]+)', html_str)
             if match_fallback:
                 return match_fallback.group(1).strip()
                 
-            # 策略 3：中文粗暴比對
+            # 策略 3：中文粗暴字串比對
             match_zh = re.search(r'([0-9\.,KkMm]+)(?:名粉絲|位粉絲)', html_str)
             if match_zh:
                 return match_zh.group(1).strip()
                 
         return None
     except Exception as e:
-        print(f"💥 爬取 @{id} 出錯: {e}")
+        print(f"💥 爬取 @{threads_id} 出錯: {e}")
         return None
 
 def main():
     print("🔄 開始自 Supabase 讀取目前飲水機清單...")
-    # 只需要拿 id 欄位就可以了，因為 id 就是真正的 Threads 帳號
-    response = supabase.table("water_dispensers").select("id").execute()
+    # 🎯 核心修正：改為撈取新改名的欄位 `threads_id`
+    response = supabase.table("water_dispensers").select("threads_id").execute()
     items = response.data
     
     if not items:
@@ -75,11 +75,11 @@ def main():
         return
 
     for item in items:
-        # 💡 關鍵修正：真正的 Threads 帳號就是你的 id 欄位
-        id = item['id']
+        # 💡 這裡拿到的就是最乾淨、真正的 Threads 帳號了
+        threads_id = item['threads_id']
         
-        print(f"🔎 正在爬取 @{id} 的最新 Threads 數據...")
-        raw_followers = fetch_threads_followers(id)
+        print(f"🔎 正在爬取真正的 Threads 帳號 @{threads_id} 的最新數據...")
+        raw_followers = fetch_threads_followers(threads_id)
         
         if raw_followers is not None:
             int_followers = parse_followers_to_int(raw_followers)
@@ -87,17 +87,17 @@ def main():
             
             current_time = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
             
-            # 🚀 依據 id 寫回正確的資料列
+            # 🚀 核心修正：對應條件改用現有的主鍵 `threads_id` 來對齊更新
             supabase.table("water_dispensers") \
                 .update({
                     "followers": int_followers, 
                     "last_updated_time": current_time
                 }) \
-                .eq("id", id) \
+                .eq("threads_id", threads_id) \
                 .execute()
-            print(f"✅ @{id} 雲端數據同步成功！")
+            print(f"✅ @{threads_id} 雲端數據同步成功！")
         else:
-            print(f"⚠️ 無法取得 @{id} 數據，跳過不更新")
+            print(f"⚠️ 無法取得 @{threads_id} 數據，跳過不更新")
             
         time.sleep(5)
 
