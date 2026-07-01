@@ -9,11 +9,10 @@ from playwright.sync_api import sync_playwright
 
 # === Supabase 設定區 ===
 RAW_URL = os.environ.get("SUPABASE_URL", "https://azezhxlatzfgltzqguoa.supabase.co/rest/v1/")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "sb_publishable_FPMDx4PO77A99RzoVbs3XQ_P9R5aOFP")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 TABLE_NAME = "water_dispensers"
 
-# 🧬 自動化清洗網址：防呆機制，確保最後格式一定是 https://xxx.supabase.co/rest/v1
-# 不管你填入的有帶 /rest/v1/ 還是只有純 domain，都會被修正好
+# 自動化清洗網址
 clean_match = re.match(r"(https://[^/]+)", RAW_URL.strip())
 if clean_match:
     SUPABASE_URL = f"{clean_match.group(1)}/rest/v1"
@@ -22,8 +21,8 @@ else:
 
 
 def get_threads_ids_from_supabase():
-    """從 Supabase 撈取所有需要爬取的飲水機 threads_id"""
-    url = f"{SUPABASE_URL}/{TABLE_NAME}?select=id,threads_id"
+    """修正：只撈取 threads_id，不撈不存在的 id 欄位"""
+    url = f"{SUPABASE_URL}/{TABLE_NAME}?select=threads_id"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -39,16 +38,15 @@ def get_threads_ids_from_supabase():
     except urllib.error.HTTPError as e:
         error_body = e.read().decode('utf-8')
         print(f"❌ Supabase API 讀取失敗 (HTTP {e.code}): {error_body}")
-        print(f"🔗 當時請求的完整網址為: {url}")
         return []
     except Exception as e:
         print(f"❌ 連線至 Supabase 發生異常: {e}")
         return []
 
 
-def update_supabase_followers(record_id, followers_str):
-    """將抓到的粉絲數與更新時間同步回資料庫"""
-    url = f"{SUPABASE_URL}/{TABLE_NAME}?id=eq.{record_id}"
+def update_supabase_followers(threads_id, followers_str):
+    """修正：改用 threads_id 作為條件來更新對應資料列，欄位名稱對齊 last_updated_time"""
+    url = f"{SUPABASE_URL}/{TABLE_NAME}?threads_id=eq.{threads_id}"
     headers = {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
@@ -58,7 +56,7 @@ def update_supabase_followers(record_id, followers_str):
     
     payload_data = {
         "followers": followers_str,
-        "updated_at": datetime.now(timezone.utc).isoformat()
+        "last_updated_time": datetime.now(timezone.utc).isoformat()  # 對齊你的欄位名稱 last_updated_time
     }
     payload = json.dumps(payload_data).encode('utf-8')
     
@@ -115,14 +113,13 @@ def main():
         page = context.new_page()
 
         for idx, account in enumerate(account_list, start=1):
-            db_id = account["id"]
             threads_id = account["threads_id"]
 
             print(f"\n【{idx}/{len(account_list)}】正在分析：@{threads_id}")
             followers_result = get_threads_follower(page, threads_id)
             print(f"   -> 偵測到粉絲數：{followers_result}")
 
-            status = update_supabase_followers(db_id, followers_result)
+            status = update_supabase_followers(threads_id, followers_result)
             print(f"   -> 同步狀態：{status}")
 
             time.sleep(2)
