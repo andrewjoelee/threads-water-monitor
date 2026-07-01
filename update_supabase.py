@@ -4,7 +4,7 @@ import time
 import json
 import urllib.request
 import urllib.error
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from playwright.sync_api import sync_playwright
 
 # === Supabase 設定區 ===
@@ -56,7 +56,7 @@ def update_supabase_followers(threads_id, followers_str):
     
     payload_data = {
         "followers": followers_str,
-        "last_updated_time": datetime.now(timezone.utc).isoformat()  # 對齊你的欄位名稱 last_updated_time
+        "last_updated_time": datetime.now(timezone(timedelta(hours=8))).strftime("%Y-%m-%d %H:%M:%S")
     }
     payload = json.dumps(payload_data).encode('utf-8')
     
